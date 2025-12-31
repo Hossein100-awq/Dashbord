@@ -1,0 +1,40 @@
+/* src/app/globals.css */
+
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root {
+  --fallback-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+
+body, button, input, textarea, select, span, div, p, h1, h2, h3, h4, h5, h6, label, th, td, li {
+  font-family: var(--font-vazir), var(--fallback-sans) !important;
+}
+html.dark { 
+  background-color: #000; 
+  color: #fff; 
+}
+
+html:not(.dark) { 
+  background-color: #fff; 
+  color: #000; 
+}
+
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
