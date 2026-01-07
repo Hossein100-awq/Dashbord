@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-
 import {
   Button,
   TextField,
@@ -9,6 +8,51 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+
+// تابع لاگین را بیرون از کامپوننت تعریف می‌کنیم تا در هر رندر دوباره ساخته نشود
+const login = async ({
+  username,
+  password,
+}: {
+  username: string;
+  password: string;
+}) => {
+  const response = await axios.post(
+    "http://uat-prosha.dayatadbir.com/auth/Auth/LoginWithPassword",
+    { username, password },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  return response.data;
+};
+
+// استایل را ثابت تعریف می‌کنیم
+const textFieldStyle = {
+  direction: "rtl" as const,
+  "& .MuiInputLabel-root": {
+    right: 30,
+    left: "auto",
+    transformOrigin: "right top",
+    "&.Mui-focused": {
+      right: 30,
+      left: "auto",
+    },
+    "&.MuiFormLabel-filled": {
+      right: 30,
+      left: "auto",
+    },
+  },
+  "& .MuiOutlinedInput-root": {
+    "& input": {
+      textAlign: "right",
+    },
+  },
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,81 +62,54 @@ export default function LoginPage() {
     password: "",
   });
 
-  // استفاده از useState ساده برای مدیریت وضعیت لودینگ و خطا
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      // اینجا منطق واقعی احراز هویت باید قرار بگیرد.
-      // فعلاً برای جلوگیری از ارور، یک تاخیر ۱ ثانیه‌ای شبیه‌سازی می‌کنیم.
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // اگر نام کاربری و رمز عبور وارد شده بود، به داشبورد برو
-      if (formData.username && formData.password) {
-        router.push("/Dashboard");
-      } else {
-        throw new Error("لطفاً نام کاربری و رمز عبور را وارد کنید.");
+  // اصلاح شده: استفاده از سینتکس آبجکت برای سازگاری با React Query v5
+  const mutation = useMutation({
+    mutationFn: login,
+    onSuccess: (data) => {
+      if (data.token) {
+        localStorage.setItem("token", data.token);
       }
-    } catch (err: any) {
+      router.push("/Dashboard");
+    },
+    onError: (err: any) => {
       console.error("Login Error:", err);
-
       let message = "نام کاربری یا رمز عبور اشتباه است";
 
-      if (err?.data) {
-        const data = err.data;
-        if (typeof data === "string") {
-          message = data;
-        } else if (data.message) {
-          message = data.message;
-        } else if (data.error) {
-          message = data.error;
-        } else if (Array.isArray(data.errors)) {
-          message = data.errors.join(", ");
-        }
+      if (err?.response?.data) {
+        const data = err.response.data;
+        if (typeof data === "string") message = data;
+        else if (data.message) message = data.message;
+        else if (data.error) message = data.error;
+        else if (Array.isArray(data.errors)) message = data.errors.join(", ");
       } else if (err?.message) {
         message = err.message;
       }
 
       setError(message);
-    } finally {
-      setIsLoading(false);
+    },
+  });
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!formData.username || !formData.password) {
+      setError("لطفاً نام کاربری و رمز عبور را وارد کنید.");
+      return;
     }
+
+    mutation.mutate({ username: formData.username, password: formData.password });
   };
 
-  if (isLoading) {
+  if (mutation.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <CircularProgress />
       </div>
     );
   }
-
-  const textFieldStyle = {
-    direction: "rtl" as const,
-    "& .MuiInputLabel-root": {
-      right: 30,
-      left: "auto",
-      transformOrigin: "right top",
-      "&.Mui-focused": {
-        right: 30,
-        left: "auto",
-      },
-      "&.MuiFormLabel-filled": {
-        right: 30,
-        left: "auto",
-      },
-    },
-    "& .MuiOutlinedInput-root": {
-      "& input": {
-        textAlign: "right",
-      },
-    },
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -140,9 +157,9 @@ export default function LoginPage() {
               color="primary"
               size="large"
               className="mt-2"
-              disabled={isLoading}
+              disabled={mutation.isLoading}
             >
-              {isLoading ? "در حال ورود..." : "ورود"}
+              {mutation.isLoading ? "در حال ورود..." : "ورود"}
             </Button>
           </form>
         </div>
