@@ -20,7 +20,7 @@ const login = async ({
   password: string;
 }) => {
   const response = await axios.post(
-    "http://uat-prosha.dayatadbir.com/auth/Auth/LoginWithPassword",
+    "/api/login", // تغییر از آدرس کامل به مسیر پروکسی
     { username, password },
     {
       headers: {

@@ -22,8 +22,9 @@ interface LoginResponse {
   };
 }
 
+// اصلاح شده: آدرس را به مسیر پروکسی محلی تغییر دادیم
 const login = async ({ username, password }: LoginParams): Promise<LoginResponse> => {
-  const response = await axiosInstance.post("/auth/Auth/LoginWithPassword", {
+  const response = await axiosInstance.post("/api/login", {
     username,
     password,
   });
