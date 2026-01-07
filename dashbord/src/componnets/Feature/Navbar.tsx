@@ -5,10 +5,10 @@ import React from "react";
 import WbSunnyIcon from "@mui/icons-material/WbSunny";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import PersonIcon from "@mui/icons-material/Person";
-import { useTheme } from "./../Them";  // import درست
+
 
 export default function Navbar() {
-  const { isDark, toggle } = useTheme();
+
 
   return (
     <header className="w-full">
@@ -22,16 +22,10 @@ export default function Navbar() {
 
         <div className="flex gap-2 items-center">
           <button
-            onClick={toggle}
-            aria-label={isDark ? "روشن کردن تم" : "تاریک کردن تم"}
-            title={isDark ? "روشن کردن تم" : "تاریک کردن تم"}
+          
             className="p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
           >
-            {isDark ? (
-              <DarkModeIcon fontSize="small" className="text-base sm:text-lg md:text-xl" />
-            ) : (
-              <WbSunnyIcon fontSize="small" className="text-base sm:text-lg md:text-xl" />
-            )}
+         
           </button>
 
           <PersonIcon fontSize="small" className="mx-2 sm:mx-3 md:mx-5" />

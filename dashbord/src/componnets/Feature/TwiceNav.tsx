@@ -13,7 +13,7 @@ export const SecNav = () => {
         >
           <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-3">
             <div className="w-full sm:w-auto text-center sm:text-right text-sm sm:text-base md:text-lg lg:text-xl">
-              به پنل آوید کارت خوش آمدید
+              به پنل آوا کارت خوش آمدید
             </div>
 
             <div className="relative flex justify-center sm:justify-end w-full sm:w-auto -mt-6 sm:-mt-10 md:-mt-12">

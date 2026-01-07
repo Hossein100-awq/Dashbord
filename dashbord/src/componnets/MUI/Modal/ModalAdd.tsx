@@ -36,7 +36,7 @@ const schema = yup.object().shape({
             : "مبلغ پیش‌فرض را وارد کنید";
         return schema.required(msg).matches(/^\d+$/, "فقط عدد وارد کنید");
       } else {
-        return schema.matches(/^\d*$/, "فقط عدد وارد کنید"); // optional, but if entered, digits only
+        return schema.matches(/^\d*$/, "فقط عدد وارد کنید");
       }
     }),
   explain: yup.string().max(200, "حداکثر 200 کاراکتر"),
@@ -115,7 +115,6 @@ const ModalAdd: React.FC<ModalT> = ({
     reset(init);
 
     snapshotRef.current = init;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, JSON.stringify(initialData), reset]);
 
   const onSubmit = (data: any) => {
@@ -123,7 +122,7 @@ const ModalAdd: React.FC<ModalT> = ({
       ? Number(data.defaultAmount.replace(/[^0-9.-]+/g, ""))
       : 0;
     if (data.isPercent === "yes") {
-      amount = amount / 100; // به عنوان درصد در نظر بگیر (مثلاً 10 → 0.1)
+      amount = amount / 100;
     }
     const item: Cost = {
       id: initialData?.id ?? Date.now(),
@@ -141,7 +140,6 @@ const ModalAdd: React.FC<ModalT> = ({
     reset(snapshotRef.current);
   };
 
-  // تشخیص حالت ویرایش یا افزودن
   const isEdit = !!(
     initialData &&
     initialData.id !== undefined &&
@@ -190,7 +188,7 @@ const ModalAdd: React.FC<ModalT> = ({
           <form onSubmit={handleSubmit(onSubmit)}>
             <Grid container spacing={3}>
               <div className="flex" style={{ width: "100%" }}>
-                <div style={{ flex: 1 }}>
+                <div className="mt-10 px-0.5" style={{ flex: 1 }}>
                   <Grid item xs={12} md={6}>
                     <Controller
                       name="cost"
@@ -198,7 +196,7 @@ const ModalAdd: React.FC<ModalT> = ({
                       render={({ field, fieldState: { error } }) => (
                         <TextField
                           {...field}
-                          fullWidth
+                          // fullWidth={false}  // یا این خط را حذف کنید
                           label="عنوان هزینه *"
                           size="small"
                           error={!!error}
@@ -214,14 +212,18 @@ const ModalAdd: React.FC<ModalT> = ({
                           FormHelperTextProps={{
                             sx: { textAlign: "right" },
                           }}
-                          sx={{ mb: 2 }}
+                          sx={{
+                            mb: 2,
+                            width: "151px", // <--- اینجا عرض را تنظیم کنید (مثلاً 500 پیکسل)
+                          }}
                         />
                       )}
                     />
                   </Grid>
                 </div>
 
-                <div className="mr-6 mb-3.5" style={{ marginLeft: 16 }}>
+                <div>
+                  <div className="mr-12 mb-3.5" style={{ marginLeft: 16 }}>
                   <Grid item xs={12} md={6}>
                     <Box
                       sx={{
@@ -302,6 +304,7 @@ const ModalAdd: React.FC<ModalT> = ({
                     </Box>
                   </Grid>
                 </div>
+                </div>
               </div>
             </Grid>
 
@@ -314,8 +317,15 @@ const ModalAdd: React.FC<ModalT> = ({
                     <TextField
                       {...field}
                       onChange={(e) => {
-                        // فقط عدد اجازه بده (حروف رو فیلتر کن)
-                        const value = e.target.value.replace(/[^0-9]/g, "");
+                        let value = e.target.value.replace(/[^0-9]/g, "");
+
+                        if (isPercentValue === "yes") {
+                          const numValue = parseInt(value, 10);
+                          if (!isNaN(numValue) && numValue > 100) {
+                            value = "100";
+                          }
+                        }
+
                         field.onChange(value);
                       }}
                       label={
@@ -329,13 +339,13 @@ const ModalAdd: React.FC<ModalT> = ({
                       helperText={error?.message}
                       InputLabelProps={{
                         shrink: true,
-                        sx: { right: 8, left: "auto", textAlign: "right" },
+                        sx: { right: 1, left: "auto", textAlign: "right" },
                       }}
                       inputProps={{
                         dir: "rtl",
                         style: { textAlign: "right", paddingRight: 10 },
-                        inputMode: "numeric", // کیبورد عددی نشون بده
-                        pattern: "[0-9]*", // برای HTML validation
+                        inputMode: "numeric",
+                        pattern: "[0-9]*",
                       }}
                       FormHelperTextProps={{
                         sx: { textAlign: "right" },
@@ -360,12 +370,12 @@ const ModalAdd: React.FC<ModalT> = ({
                         shrink: true,
                         sx: {
                           left: "auto",
-                          // مقدار right را برای جابه‌جایی به چپ افزایش بده
-                          right: { xs: "12px", sm: "20px", md: "36px" },
+
+                          right: { xs: "10px", sm: "14px", md: "33px" },
                           transformOrigin: "right",
-                          // وقتی label shrink شود، باز هم همون فاصله رعایت شود
+
                           "&.MuiInputLabel-shrink": {
-                            right: { xs: "9px", sm: "17px", md: "33px" },
+                            right: { xs: "6px", sm: "15px", md: "29px" },
                           },
                         },
                       }}
@@ -393,7 +403,7 @@ const ModalAdd: React.FC<ModalT> = ({
               }}
             >
               <Button
-                type="submit" // برای submit فرم
+                type="submit"
                 className="flex gap-1.5"
                 variant="contained"
                 disabled={isSubmitting}

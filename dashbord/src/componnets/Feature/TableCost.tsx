@@ -3,7 +3,7 @@
 
 import React, { useState } from "react";
 import DehazeIcon from "@mui/icons-material/Dehaze";
-import AddchartIcon from "@mui/icons-material/Addchart";
+
 import { styled } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -80,7 +80,7 @@ const TableCost: React.FC<Props> = ({ rows, onDelete, onEdit }) => {
           <DehazeIcon />
           لیست انواع هزینه‌ها
         </div>
-        <AddchartIcon className="text-gray-500" />
+       
       </div>
 
       <TableContainer component={Paper}>
@@ -112,8 +112,10 @@ const TableCost: React.FC<Props> = ({ rows, onDelete, onEdit }) => {
                   <StyledTableCell>{row.isOptional ? "بله" : "خیر"}</StyledTableCell>
                   <StyledTableCell>
                     {row.isPercent
-                      ? `${Math.round(row.amount * 100).toLocaleString("fa-IR")} %`
-                      : `${Math.round(row.amount).toLocaleString("fa-IR")} ریال`}
+                      ? // محدود کردن درصد به حداکثر ۱۰۰ با استفاده از Math.min
+                        `${Math.min(100, Math.round(Number(row.amount) * 100)).toLocaleString("fa-IR")} %`
+                      : // نمایش مبلغ
+                        `${Math.round(Number(row.amount)).toLocaleString("fa-IR")} ریال`}
                   </StyledTableCell>
                   <StyledTableCell>
                     <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
@@ -137,9 +139,9 @@ const TableCost: React.FC<Props> = ({ rows, onDelete, onEdit }) => {
       </TableContainer>
 
       <Dialog open={openDelete} onClose={() => setOpenDelete(false)} dir="rtl">
-        <DialogTitle>حذف مورد</DialogTitle>
+       
         <DialogContent>
-          <Typography>آیا از حذف این ردیف مطمئن هستید؟</Typography>
+          <Typography> از حذف نوع هزینه حمل کالا اطمینان دارید؟     </Typography>
         </DialogContent>
         <DialogActions className="flex gap-4" sx={{ justifyContent: "flex-start", px: 3, pb: 2 }}>
           <Button variant="outlined" onClick={() => setOpenDelete(false)}>

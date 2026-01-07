@@ -1,9 +1,9 @@
 // src/app/layout.tsx
 import { Vazirmatn } from 'next/font/google';
 import "./globals.css";
-import ThemeProvider from "../componnets/Them";
 import Script from "next/script";
 import React from "react";
+import ReactQueryProvider from '@/componnets/Feature/ReactQuery';
 
 const vazir = Vazirmatn({
   subsets: ['arabic'],
@@ -39,7 +39,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+     <ReactQueryProvider>
+  {children}
+
+     </ReactQueryProvider>
+   
       </body>
     </html>
   );
