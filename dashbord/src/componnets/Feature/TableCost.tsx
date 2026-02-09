@@ -1,4 +1,3 @@
-// src/components/US/TableCost.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -60,17 +59,17 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 const TableCost: React.FC<Props> = ({ rows, onDelete, onEdit }) => {
   const [openDelete, setOpenDelete] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedRow, setSelectedRow] = useState<Cost | null>(null);
 
-  const handleDeleteClick = (id: number) => {
-    setSelectedId(id);
+  const handleDeleteClick = (row: Cost) => {
+    setSelectedRow(row);
     setOpenDelete(true);
   };
 
   const confirmDelete = () => {
-    if (selectedId !== null) onDelete(selectedId);
+    if (selectedRow !== null) onDelete(selectedRow.id);
     setOpenDelete(false);
-    setSelectedId(null);
+    setSelectedRow(null);
   };
 
   return (
@@ -80,7 +79,6 @@ const TableCost: React.FC<Props> = ({ rows, onDelete, onEdit }) => {
           <DehazeIcon />
           لیست انواع هزینه‌ها
         </div>
-       
       </div>
 
       <TableContainer component={Paper}>
@@ -112,15 +110,13 @@ const TableCost: React.FC<Props> = ({ rows, onDelete, onEdit }) => {
                   <StyledTableCell>{row.isOptional ? "بله" : "خیر"}</StyledTableCell>
                   <StyledTableCell>
                     {row.isPercent
-                      ? // محدود کردن درصد به حداکثر ۱۰۰ با استفاده از Math.min
-                        `${Math.min(100, Math.round(Number(row.amount) * 100)).toLocaleString("fa-IR")} %`
-                      : // نمایش مبلغ
-                        `${Math.round(Number(row.amount)).toLocaleString("fa-IR")} ریال`}
+                      ? `${Math.min(100, Math.round(Number(row.amount) * 100)).toLocaleString("fa-IR")} %`
+                      : `${Math.round(Number(row.amount)).toLocaleString("fa-IR")} ریال`}
                   </StyledTableCell>
                   <StyledTableCell>
                     <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
                       <Tooltip title="حذف">
-                        <IconButton size="small" color="error" onClick={() => handleDeleteClick(row.id)}>
+                        <IconButton size="small" color="error" onClick={() => handleDeleteClick(row)}>
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -139,9 +135,10 @@ const TableCost: React.FC<Props> = ({ rows, onDelete, onEdit }) => {
       </TableContainer>
 
       <Dialog open={openDelete} onClose={() => setOpenDelete(false)} dir="rtl">
-       
         <DialogContent>
-          <Typography> از حذف نوع هزینه حمل کالا اطمینان دارید؟     </Typography>
+          <Typography>
+             آیا از حذف <strong>{selectedRow?.title}</strong> اطمینان دارید؟
+          </Typography>
         </DialogContent>
         <DialogActions className="flex gap-4" sx={{ justifyContent: "flex-start", px: 3, pb: 2 }}>
           <Button variant="outlined" onClick={() => setOpenDelete(false)}>

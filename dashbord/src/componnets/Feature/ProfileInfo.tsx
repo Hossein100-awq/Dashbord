@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PersonIcon from "@mui/icons-material/Person";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import Link from "next/link";
@@ -17,12 +17,56 @@ import {
   Alert,
 } from "@mui/material";
 
-// همه چیز مربوط به ProfileService حذف شد
+import { getMyProfile, updateMyProfile } from "./../Hooks/Profile/Prifile";
+
+interface OriginalProfileData {
+  birthDate: string;
+  email: string;
+  city: string;
+  province: string;
+}
+
+interface OptionItem {
+  value: string;
+  label: string;
+}
+
+const formatShebaNumeric = (value: string) => {
+  if (!value) return value;
+  let upperValue = value.toUpperCase();
+  const prefix = "IR";
+  if (upperValue.startsWith(prefix)) {
+    upperValue = upperValue.substring(2);
+  }
+  const digitsOnly = upperValue.replace(/[^0-9]/g, "").substring(0, 25);
+  if (digitsOnly.length === 0) return "";
+  let formatted = prefix;
+  let pos = 0;
+  const groups = [2, 4, 4, 4, 4, 4, 2];
+  for (let g of groups) {
+    if (pos >= digitsOnly.length) break;
+    const part = digitsOnly.substring(pos, pos + g);
+    formatted += " " + part;
+    pos += g;
+  }
+  if (pos < digitsOnly.length) {
+    formatted += " " + digitsOnly.substring(pos);
+  }
+  return formatted;
+};
+
+const formatIranianMobile = (value: string) => {
+  if (!value) return value;
+  const digits = value.replace(/[^0-9]/g, "").substring(0, 11);
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 7) return digits.slice(0, 4) + " " + digits.slice(4);
+  return digits.slice(0, 4) + " " + digits.slice(4, 7) + " " + digits.slice(7);
+};
 
 const schema = yup.object().shape({
   title: yup
     .string()
-    .required("عنوان را وارد کنید")
+    .required("نام و نام خانوادگی را وارد کنید")
     .max(50, "حداکثر 50 کاراکتر"),
   brandTitle: yup
     .string()
@@ -59,57 +103,15 @@ const schema = yup.object().shape({
     .max(200, "حداکثر 200 کاراکتر"),
 });
 
-const PROVINCES: {
-  [key: string]: { label: string; cities: { value: string; label: string }[] };
-} = {
-  tehran: {
-    label: "تهران",
-    cities: [
-      { value: "tehran", label: "تهران" },
-      { value: "rey", label: "ری" },
-      { value: "shemiranat", label: "شهرستان شمیرانات" },
-    ],
-  },
-  esfahan: {
-    label: "اصفهان",
-    cities: [
-      { value: "esfahan", label: "اصفهان" },
-      { value: "kashan", label: "کاشان" },
-      { value: "khomeinishahr", label: "خمینی‌شهر" },
-    ],
-  },
-  fars: {
-    label: "فارس",
-    cities: [
-      { value: "shiraz", label: "شیراز" },
-      { value: "marvdasht", label: "مرودشت" },
-      { value: "jahrm", label: "جهرم" },
-    ],
-  },
-  khorasan_razavi: {
-    label: "خراسان رضوی",
-    cities: [
-      { value: "mashhad", label: "مشهد" },
-      { value: "nishapur", label: "نیشابور" },
-      { value: "sabzevar", label: "سبزوار" },
-    ],
-  },
-  azarbaijan_east: {
-    label: "آذربایجان شرقی",
-    cities: [
-      { value: "tabriz", label: "تبریز" },
-      { value: "maragheh", label: "مراغه" },
-      { value: "marand", label: "مرند" },
-    ],
-  },
-};
-
-const ProfileC = () => {
-  // حذف useProfile و useUpdateProfile
-  // استفاده از useState ساده برای وضعیت لودینگ و خطا
+const ProfileInfo = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [errorSnackbar, setErrorSnackbar] = useState<string | null>(null);
+  
+  const [originalProfile, setOriginalProfile] = useState<OriginalProfileData | null>(null);
+  const [provinces, setProvinces] = useState<OptionItem[]>([]);
+  const [cities, setCities] = useState<OptionItem[]>([]);
 
   const {
     control,
@@ -132,71 +134,186 @@ const ProfileC = () => {
 
   const selectedProvince = watch("province");
 
-  // تغییر: اگر شهر تغییر کند و استان قبلاً انتخاب شده بود، شهر را خالی کن
-  // این بخش را با React.useEffect مدیریت نمی‌کنیم چون serverProfile نداریم که بخواهیم پر کنیم
-  // اما در رویداد onChange شهر به صورت دستی مدیریت می‌شود.
-  
-  // برای خالی کردن شهر هنگام تغییر استان، از useEffect استفاده می‌کنیم
+  const loadCitiesForProvince = (provinceId: string) => {
+    if (provinceId === "629b791c-9ede-49c4-8001-e264d5bacbea") {
+      setCities([
+        { value: "06c5835f-9673-4d91-86e7-30dd8effa565", label: "گرمسار" }, 
+        { value: "city-id-2", label: "مهدیشهر" },
+        { value: "city-id-3", label: "سرخه" }
+      ]);
+    } else if (provinceId === "some-id-2") {
+      setCities([
+         { value: "city-isf-1", label: "اصفهان" },
+         { value: "city-isf-2", label: "نجف‌آباد" }
+      ]);
+    } else {
+      setCities([]);
+    }
+  };
+
   React.useEffect(() => {
-    setValue("city", ""); // وقتی استان عوض میشه، شهر خالی بشه
+    setValue("city", "");
+    loadCitiesForProvince(selectedProvince);
   }, [selectedProvince, setValue]);
 
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setIsPageLoading(true);
 
-  const formatShebaNumeric = (value: string) => {
-    if (!value) return value;
-    let upperValue = value.toUpperCase();
-    const prefix = "IR";
-    if (upperValue.startsWith(prefix)) {
-      upperValue = upperValue.substring(2);
-    }
-    const digitsOnly = upperValue.replace(/[^0-9]/g, "").substring(0, 25);
-    if (digitsOnly.length === 0) return "";
-    let formatted = prefix;
-    let pos = 0;
-    const groups = [2, 4, 4, 4, 4, 4, 2];
-    for (let g of groups) {
-      if (pos >= digitsOnly.length) break;
-      const part = digitsOnly.substring(pos, pos + g);
-      formatted += " " + part;
-      pos += g;
-    }
-    if (pos < digitsOnly.length) {
-      formatted += " " + digitsOnly.substring(pos);
-    }
-    return formatted;
-  };
+      const mockProvinces: OptionItem[] = [
+        { value: "629b791c-9ede-49c4-8001-e264d5bacbea", label: "سمنان" }, 
+        { value: "some-id-2", label: "اصفهان" },
+        { value: "some-id-3", label: "شیراز" },
+        { value: "some-id-4", label: "تبریز" }
+      ];
+      setProvinces(mockProvinces);
 
-  const formatIranianMobile = (value: string) => {
-    if (!value) return value;
-    const digits = value.replace(/[^0-9]/g, "").substring(0, 11);
-    if (digits.length <= 4) return digits;
-    if (digits.length <= 7) return digits.slice(0, 4) + " " + digits.slice(4);
-    return digits.slice(0, 4) + " " + digits.slice(4, 7) + " " + digits.slice(7);
-  };
+      let currentProvinceId = "";
+      let currentCityId = "";
+
+      if (typeof window !== 'undefined') {
+        const savedProfile = localStorage.getItem('profileData');
+        if (savedProfile) {
+          try {
+            const data = JSON.parse(savedProfile);
+            
+            const displayName = data.fullName || `${data.firstName || ''} ${data.lastName || ''}`.trim();
+            
+            setValue("title", displayName);
+            setValue("number", formatIranianMobile(data.phoneNo || ""));
+            setValue("numberBank", formatShebaNumeric(data.iban || ""));
+            setValue("province", data.province || "");
+            setValue("city", data.city || "");
+            setValue("address", data.address || "");
+            
+            if (data.brandTitle) {
+              setValue("brandTitle", data.brandTitle);
+            }
+
+            setOriginalProfile({
+              birthDate: data.birthDate || new Date().toISOString(),
+              email: data.email || "",
+              city: data.city || "",
+              province: data.province || "",
+            });
+
+            currentProvinceId = data.province;
+            currentCityId = data.city;
+            
+            if (currentProvinceId) {
+              loadCitiesForProvince(currentProvinceId);
+            }
+            
+            setIsPageLoading(false);
+          } catch (e) {
+            console.error("خطا در خواندن LocalStorage", e);
+          }
+        }
+      }
+
+      try {
+        const data = await getMyProfile();
+        
+        setOriginalProfile({
+          birthDate: data.birthDate || new Date().toISOString(),
+          email: data.email || "",
+          city: data.city || "",
+          province: data.province || "",
+        });
+
+        const displayName = data.fullName || `${data.firstName || ''} ${data.lastName || ''}`.trim();
+
+        setValue("title", displayName);
+        setValue("number", formatIranianMobile(data.phoneNo || ""));
+        setValue("numberBank", formatShebaNumeric(data.iban || ""));
+        setValue("province", data.province || "");
+        setValue("city", data.city || "");
+        setValue("address", data.address || "");
+
+        if (data.brandTitle) {
+          setValue("brandTitle", data.brandTitle);
+        }
+
+        if (data.province) {
+          loadCitiesForProvince(data.province);
+        }
+
+      } catch (err: any) {
+        if (!localStorage.getItem('profileData')) {
+          console.error(err);
+          setErrorSnackbar("خطا در دریافت اطلاعات کاربر");
+        }
+      } finally {
+        setIsPageLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, [setValue]);
 
   const onSubmit = async (data: any) => {
     setIsLoading(true);
     setErrorSnackbar(null);
 
+    if (!originalProfile) {
+      setErrorSnackbar("اطلاعات پروفایل کامل بارگذاری نشده است");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!data.city || data.city === "") {
+      setErrorSnackbar("لطفا شهر را انتخاب کنید");
+      setIsLoading(false);
+      return;
+    }
+
+    const names = data.title.split(" ");
+    const firstName = names[0] || "";
+    const lastName = names.slice(1).join(" ");
+
     const payload = {
-      ...data,
-      numberBank: data.numberBank ? data.numberBank.replace(/\s/g, "") : "",
-      number: data.number ? data.number.replace(/\s/g, "") : "",
+      firstName: firstName,
+      lastName: lastName,
+      email: originalProfile.email, 
+      iban: data.numberBank ? data.numberBank.replace(/\s/g, "") : "",
+      address: data.address,
+      birthDate: originalProfile.birthDate, 
+      cityId: data.city, 
+      provinceId: data.province || "", 
+      postalCode: "",
+      brandTitle: data.brandTitle 
     };
 
     try {
-      // شبیه‌سازی ارسال به سرور
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const updatedData = await updateMyProfile(payload);
       
-      console.log("Data ready to save:", payload);
+      if (typeof window !== 'undefined') {
+        const currentStored = JSON.parse(localStorage.getItem('profileData') || '{}');
+        
+        const dataToSave = {
+          ...updatedData,
+          brandTitle: updatedData.brandTitle || data.brandTitle || currentStored.brandTitle
+        };
+        
+        localStorage.setItem('profileData', JSON.stringify(dataToSave));
+      }
       
       setSnackbarOpen(true);
     } catch (err: any) {
       console.error("Full Error Object:", err);
-      const msg =
-        err?.message ||
-        err?.data?.message ||
-        (typeof err === "string" ? err : "خطا در ذخیره اطلاعات");
+      let msg = "خطا در ذخیره اطلاعات";
+      if (err?.response?.data) {
+        const responseData = err.response.data;
+        if (responseData.errors && responseData.errors.length > 0) {
+          msg = responseData.errors[0].message;
+        } else if (responseData.reasons && responseData.reasons.length > 0) {
+          msg = responseData.reasons[0].message;
+        } else if (responseData.message) {
+          msg = responseData.message;
+        }
+      } else if (err?.message) {
+        msg = err.message;
+      }
       setErrorSnackbar(msg);
     } finally {
       setIsLoading(false);
@@ -240,6 +357,10 @@ const ProfileC = () => {
     },
   };
 
+  if (isPageLoading) {
+    return <div className="p-6 text-center">در حال دریافت اطلاعات...</div>;
+  }
+
   return (
     <div className="bg-white rounded-md p-6 m-4" dir="rtl">
       <div className="flex justify-between items-center mb-4">
@@ -267,7 +388,7 @@ const ProfileC = () => {
               <TextField
                 {...field}
                 fullWidth
-                label="عنوان *"
+                label="نام و نام خانوادگی *"
                 variant="outlined"
                 error={!!error}
                 helperText={error?.message}
@@ -361,9 +482,9 @@ const ProfileC = () => {
                       <MenuItem value="" disabled>
                         <span className="text-gray-400">انتخاب استان</span>
                       </MenuItem>
-                      {Object.entries(PROVINCES).map(([key, info]) => (
-                        <MenuItem key={key} value={key}>
-                          {info.label}
+                      {provinces.map((p) => (
+                        <MenuItem key={p.value} value={p.value}>
+                          {p.label}
                         </MenuItem>
                       ))}
                     </Select>
@@ -378,28 +499,25 @@ const ProfileC = () => {
             <Controller
               name="city"
               control={control}
-              render={({ field, fieldState: { error } }) => {
-                const cities = selectedProvince ? PROVINCES[selectedProvince]?.cities ?? [] : [];
-                return (
-                  <div>
-                    <p className="mb-1 text-sm text-gray-500">شهر *</p>
+              render={({ field, fieldState: { error } }) => (
+                <div>
+                  <p className="mb-1 text-sm text-gray-500">شهر *</p>
 
-                    <FormControl fullWidth error={!!error} sx={staticLabelSelectSx}>
-                      <Select {...field} disabled={!selectedProvince} displayEmpty>
-                        <MenuItem value="" disabled>
-                          <span className="text-gray-400">انتخاب شهر</span>
+                  <FormControl fullWidth error={!!error} sx={staticLabelSelectSx}>
+                    <Select {...field} disabled={!selectedProvince} displayEmpty>
+                      <MenuItem value="" disabled>
+                        <span className="text-gray-400">انتخاب شهر</span>
+                      </MenuItem>
+                      {cities.map((c) => (
+                        <MenuItem key={c.value} value={c.value}>
+                          {c.label}
                         </MenuItem>
-                        {cities.map((c) => (
-                          <MenuItem key={c.value} value={c.value}>
-                            {c.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {error && <FormHelperText>{error.message}</FormHelperText>}
-                    </FormControl>
-                  </div>
-                );
-              }}
+                      ))}
+                    </Select>
+                    {error && <FormHelperText>{error.message}</FormHelperText>}
+                  </FormControl>
+                </div>
+              )}
             />
           </div>
 
@@ -445,7 +563,7 @@ const ProfileC = () => {
 
       <Snackbar
         open={!!errorSnackbar}
-        autoHideDuration={4000}
+        autoHideDuration={6000}
         onClose={() => setErrorSnackbar(null)}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
@@ -457,4 +575,4 @@ const ProfileC = () => {
   );
 };
 
-export default ProfileC;
+export default ProfileInfo;

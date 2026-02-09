@@ -3,9 +3,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
-import APICALL from "../Interceptor/axios";
-
-
+import APICALL from "../../../Interceptor/axios";
+import LoginForm from "./../../../app/page";
 
 export interface LoginInputs {
   username: string;
@@ -20,17 +19,6 @@ export interface ApiResponse {
   errors?: Array<{ message: string }>;
 }
 
-interface LoginFormProps {
-  username: string;
-  password: string;
-  isLoading: boolean;
-  error: string | null;
-  onUsernameChange: (value: string) => void;
-  onPasswordChange: (value: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
-}
-
-
 export const Login = async (data: LoginInputs): Promise<ApiResponse> => {
 
   console.log("API: Sending Request with data:", data);
@@ -38,95 +26,21 @@ export const Login = async (data: LoginInputs): Promise<ApiResponse> => {
   return response.data;
 };
 
-
-
-const LoginForm = ({
-  username,
-  password,
-  isLoading,
-  error,
-  onUsernameChange,
-  onPasswordChange,
-  onSubmit,
-}: LoginFormProps) => {
-  
-
-  console.log("UI RERENDERED:", { username, password, isLoading, error });
-
-  return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 font-sans">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl w-96 flex flex-col gap-6">
-        <h2 className="text-2xl font-bold text-center text-gray-800">ورود به حساب</h2>
-
-        {error && (
-          <div className="text-red-500 text-center text-sm bg-red-50 p-2 rounded">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={(e) => { 
-        
-            console.log("UI: Form Submit Event Triggered"); 
-            onSubmit(e); 
-          }} 
-          className="flex flex-col gap-4 ltr"
-        >
-          <input
-            dir="ltr"
-            type="text"
-            placeholder="UserName"
-            value={username}
-            onChange={(e) => {
-                
-                console.log("UI: Username Input Changed:", e.target.value);
-                onUsernameChange(e.target.value);
-            }}
-            className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-700 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all duration-300"
-          />
-          <input
-            dir="ltr"
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => {
-                
-                console.log("UI: Password Input Changed:", e.target.value);
-                onPasswordChange(e.target.value);
-            }}
-            className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-700 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all duration-300"
-          />
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/30 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? "در حال ورود..." : "ورود"}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-
-
-const Page = () => {
+const LoginPage = () => {
   const router = useRouter();
   const [data, setData] = useState<LoginInputs>({ username: '', password: '' });
   const [error, setError] = useState<string | null>(null);
-
   console.log("LOGIC: LoginPage Rendered, Current Data:", data);
 
   const mutation = useMutation({
     mutationFn: Login,
     onSuccess: (response) => {
+
       console.log("LOGIC: API Success Response:", response);
       
       if (response.isSuccess && response.value) {
         const { accesstoken } = response.value.tokens;
         const { businessKey } = response.value.user;
-        const userObject = response.value.user;
 
         if (accesstoken) {
           localStorage.setItem("accessToken", accesstoken);
@@ -134,8 +48,6 @@ const Page = () => {
         if (businessKey) {
           localStorage.setItem("businessKey", businessKey);
         }
-        
-        localStorage.setItem("user", JSON.stringify(userObject));
         
         console.log("LOGIC: Redirecting to Dashbord...");
         router.push('/Dashbord');
@@ -167,6 +79,7 @@ const Page = () => {
   });
 
   const handleLogin = (e: React.FormEvent) => {
+   
     console.log("LOGIC: handleLogin Function Called with:", data);
     e.preventDefault();
     setError(null);
@@ -180,7 +93,7 @@ const Page = () => {
       isLoading={mutation.isLoading}
       error={error}
       onUsernameChange={(val) => {
-     
+
           console.log("LOGIC: onUsernameChange called with:", val);
           setData({ ...data, username: val });
       }}
@@ -193,4 +106,4 @@ const Page = () => {
   );
 };
 
-export default Page;
+export default LoginPage;

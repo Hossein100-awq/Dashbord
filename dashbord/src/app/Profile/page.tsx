@@ -1,5 +1,6 @@
 import Navbar from "@/componnets/Feature/Navbar";
-import ProfileC from "@/componnets/Feature/ProfileInfo";
+import ProfileInfo from "@/componnets/Feature/ProfileInfo";
+
 import SideBar from "@/componnets/Feature/SideBar";
 import React from "react";
 
@@ -9,7 +10,7 @@ const page = () => {
       <SideBar />
       <div className="mx-auto w-full max-w-5xl px-4 dark:bg-black transition-colors duration-300">
         <Navbar />
-        <ProfileC />
+        <ProfileInfo />
       </div>
       
     </div>

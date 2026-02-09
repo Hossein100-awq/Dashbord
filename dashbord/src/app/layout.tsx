@@ -1,8 +1,8 @@
-// src/app/layout.tsx
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
 import React from "react";
 import ReactQueryProvider from "./../componnets/Provider";
+import AuthGuard from "@/componnets/AuthGuard";
 
 const vazir = Vazirmatn({
   subsets: ["arabic"],
@@ -16,12 +16,16 @@ export const metadata = {
   description: "Demo - theme switch",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="fa" dir="rtl" className={vazir.variable}>
       <body>
         <ReactQueryProvider>
-          {children}
+          <AuthGuard>{children}</AuthGuard>
         </ReactQueryProvider>
       </body>
     </html>

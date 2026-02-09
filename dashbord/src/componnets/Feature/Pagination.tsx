@@ -2,16 +2,24 @@ import React from 'react';
 import Pagination from '@mui/material/Pagination';
 import Stack from '@mui/material/Stack';
 
-const PA = () => {
+interface PAProps {
+  count: number;
+  page: number;
+  onChange: (event: React.ChangeEvent<unknown>, page: number) => void;
+}
+
+const PA: React.FC<PAProps> = ({ count, page, onChange }) => {
   return (
-    <Stack spacing={2} className="rtl"> 
+    <Stack spacing={2} className="rtl" direction="row" justifyContent="center" sx={{ mt: 4, mb: 2 }}>
       <Pagination
-        count={10}
+        count={count}
+        page={page}
+        onChange={onChange}
         showFirstButton
         showLastButton
         sx={{
-          "& .MuiPaginationItem-previousNext": {
-            transform: "scaleX(-1)", 
+          "&.MuiPaginationItem-previousNext": {
+            transform: "scaleX(-1)",
           },
         }}
       />
