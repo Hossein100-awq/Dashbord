@@ -14,6 +14,7 @@ import SerchBar from "@/componnets/Feature/SerchBar";
 import SideBar from "@/componnets/Feature/SideBar";
 import TableCost from "@/componnets/Feature/TableCost";
 import ModalAdd, { Cost } from "@/componnets/MUI/Modal/ModalAdd";
+import { Snackbar, Alert } from "@mui/material";
 
 const mapApiToUi = (apiItem: CostTypeDto): Cost => ({
   id: apiItem.id,
@@ -49,7 +50,6 @@ const mapUiToApi = (uiItem: Cost): any => {
     defaultAmount: finalAmount
   };
 
-  console.log("⬅️ داده ارسالی به سرور:", JSON.stringify(apiData, null, 2));
   return apiData;
 };
 
@@ -85,6 +85,16 @@ const Page: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Cost> | null>(null);
   const [query, setQuery] = useState<string>("");
+  
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "error" as "success" | "error",
+  });
+
+  const handleNotify = (message: string, severity: "success" | "error") => {
+    setSnackbar({ open: true, message, severity });
+  };
 
   const fetchCosts = async () => {
     setLoading(true);
@@ -96,6 +106,7 @@ const Page: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching:", error);
+      handleNotify("خطا در دریافت اطلاعات", "error");
     } finally {
       setLoading(false);
     }
@@ -111,28 +122,26 @@ const Page: React.FC = () => {
       let res;
 
       if (data.id) {
-        console.log(`در حال ویرایش رکورد با ID: ${data.id}`);
         res = await updateCostType(apiData);
       } else {
-        console.log("در حال ایجاد رکورد جدید");
         res = await addCostType(apiData);
       }
 
       if (res.isSuccess) {
+        handleNotify("عملیات با موفقیت انجام شد", "success");
         await fetchCosts();
         setModalOpen(false);
       } else {
         console.error("خطای سرور:", res);
-        alert("خطا در ذخیره: " + (res.errors?.[0]?.message || "نامشخص"));
+        handleNotify("خطا در ذخیره: " + (res.errors?.[0]?.message || "نامشخص"), "error");
       }
     } catch (error: any) {
       console.error("Error saving:", error);
-      
       if (error.response && error.response.data) {
         console.error("پیام دقیق سرور:", error.response.data);
-        alert("جزئیات خطا: " + JSON.stringify(error.response.data));
+        handleNotify("جزئیات خطا: " + JSON.stringify(error.response.data), "error");
       } else {
-        alert("خطا در ارتباط با سرور");
+        handleNotify("خطا در ارتباط با سرور", "error");
       }
     }
   };
@@ -141,13 +150,14 @@ const Page: React.FC = () => {
     try {
       const res = await deleteCostType(id);
       if (res.isSuccess) {
+        handleNotify("حذف با موفقیت انجام شد", "success");
         await fetchCosts();
       } else {
-        alert("خطا در حذف: " + (res.errors?.[0]?.message || "نامشخص"));
+        handleNotify("خطا در حذف: " + (res.errors?.[0]?.message || "نامشخص"), "error");
       }
     } catch (error) {
       console.error("Error deleting:", error);
-      alert("خطا در ارتباط با سرور");
+      handleNotify("خطا در ارتباط با سرور", "error");
     }
   };
 
@@ -166,17 +176,21 @@ const Page: React.FC = () => {
   const filtered = useMemo(() => searchCosts(rows, query), [rows, query]);
 
   return (
-    <div className="flex min-h-screen bg-slate-100">
+    <div className="flex min-h-screen bg-slate-100 dark:bg-gray-900 transition-colors duration-300">
       <SideBar />
-      <div className="mx-auto w-full max-w-5xl px-4">
-        <Navbar />
-        <SerchBar onOpenAdd={handleOpenAdd} onSearch={handleSearch} />
-        
-        {loading ? (
-          <div className="p-4 text-center text-gray-500">در حال دریافت اطلاعات...</div>
-        ) : (
-          <TableCost rows={filtered} onEdit={handleEdit} onDelete={handleDelete} />
-        )}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 py-2 dark:bg-black transition-colors duration-300 min-h-screen">
+            <Navbar />
+            <SerchBar onOpenAdd={handleOpenAdd} onSearch={handleSearch} />
+            
+            {loading ? (
+              <div className="p-4 text-center text-gray-500">در حال دریافت اطلاعات...</div>
+            ) : (
+              <TableCost rows={filtered} onEdit={handleEdit} onDelete={handleDelete} />
+            )}
+          </div>
+        </div>
       </div>
 
       <ModalAdd
@@ -185,6 +199,17 @@ const Page: React.FC = () => {
         save={handleSave}
         initialData={editing ?? null}
       />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: "100%" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

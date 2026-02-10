@@ -17,8 +17,9 @@ const PA: React.FC<PAProps> = ({ count, page, onChange }) => {
         onChange={onChange}
         showFirstButton
         showLastButton
+        color="primary"
         sx={{
-          "&.MuiPaginationItem-previousNext": {
+          "& .MuiPaginationItem-previousNext": {
             transform: "scaleX(-1)",
           },
         }}

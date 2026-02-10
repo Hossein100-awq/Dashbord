@@ -15,10 +15,10 @@ export interface UserProfileData {
   brandTitle?: string;
 }
 
-export interface ApiResponse {
+export interface ApiResponse<T> {
   isSuccess: boolean;
-  valueOrDefault: UserProfileData;
-  value: UserProfileData;
+  valueOrDefault: T | null;
+  value: T | null;
   errors: any[];
 }
 
@@ -29,8 +29,7 @@ export interface OptionItem {
 
 export const getMyProfile = async (): Promise<UserProfileData> => {
   try {
-    const response = await Profile.get<ApiResponse>('/User/MyProfile');
-    
+    const response = await Profile.get<ApiResponse<UserProfileData>>('/User/MyProfile');
     if (response.data.isSuccess && response.data.value) {
       return response.data.value;
     } else {
@@ -44,8 +43,7 @@ export const getMyProfile = async (): Promise<UserProfileData> => {
 
 export const updateMyProfile = async (payload: any): Promise<UserProfileData> => {
   try {
-    const response = await Profile.put<ApiResponse>('/User/MyProfile', payload);
-    
+    const response = await Profile.put<ApiResponse<UserProfileData>>('/User/MyProfile', payload);
     if (response.data.isSuccess && response.data.value) {
       return response.data.value;
     } else {
@@ -57,27 +55,40 @@ export const updateMyProfile = async (payload: any): Promise<UserProfileData> =>
   }
 };
 
-
 export const getProvinces = async (): Promise<OptionItem[]> => {
-  const response = await Profile.get('/Province'); 
-  
-
-  const data = (response.data as any) || []; 
-  
-  return data.map((item: any) => ({
-    value: item.id || item.value || item.provinceId || "",
-    label: item.name || item.provinceName || item.title || ""
-  }));
+  try {
+    const response = await Profile.get<ApiResponse<any>>('/admin/Provinces/Search?Page=1&Size=300');
+    if (response.data.isSuccess && response.data.value) {
+      const pagedResult = response.data.value;
+      if (pagedResult && Array.isArray(pagedResult.data)) {
+        return pagedResult.data.map((item: any) => ({
+          value: item.id,
+          label: item.name
+        }));
+      }
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching provinces:', error);
+    return [];
+  }
 };
 
 export const getCities = async (provinceId: string): Promise<OptionItem[]> => {
-
-  const response = await Profile.get(`/City?provinceId=${provinceId}`); 
-  
-  const data = (response.data as any) || [];
-
-  return data.map((item: any) => ({
-    value: item.id || item.value || item.cityId || "",
-    label: item.name || item.cityName || item.title || ""
-  }));
+  try {
+    const response = await Profile.get<ApiResponse<any>>(`/admin/Cities/Search?ProvinceId=${provinceId}&Page=1&Size=300`);
+    if (response.data.isSuccess && response.data.value) {
+      const pagedResult = response.data.value;
+      if (pagedResult && Array.isArray(pagedResult.data)) {
+        return pagedResult.data.map((item: any) => ({
+          value: item.id,
+          label: item.name
+        }));
+      }
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching cities:', error);
+    return [];
+  }
 };

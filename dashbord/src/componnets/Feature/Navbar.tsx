@@ -56,6 +56,11 @@ export default function Navbar() {
     SetConfirm(true);
   };
 
+  const handleProfileClick = () => {
+    handleMenuClose();
+    router.push("/Profile");
+  };
+
   const confirmLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("businessKey");
@@ -110,6 +115,14 @@ export default function Navbar() {
               </ListItemIcon>
               خروج
             </MenuItem>
+            
+            <MenuItem onClick={handleProfileClick}>
+              <ListItemIcon>
+                <PersonIcon fontSize="small" />
+              </ListItemIcon>
+              پروفایل
+            </MenuItem>
+
           </Menu>
 
           <Dialog

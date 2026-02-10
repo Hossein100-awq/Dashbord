@@ -1,79 +1,57 @@
-"use client";
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { AxiosPromise } from "axios";
-import { merchantApiClient } from "@/Interceptor/axios"; 
+import { useState, useEffect } from 'react';
+import { merchantApiClient } from './../../../Interceptor/axios';
 
-import { ProductItem } from "./../../../componnets/Cart/CartOut";
-import ProductListUI from "./../../../componnets/Cart/CartOut";
-
-interface PagedResponse {
-  total: number;
-  data: ProductItem[];
-}
-
-interface ProductApiResponse {
-  isSuccess: boolean;
-  isFailed: boolean;
-  value: PagedResponse; 
-}
-
-interface ProductQueryParams {
+export interface NewsSearchParams {
   _page: number;
   _limit: number;
-  Name?: string;
+  _sort?: string;
+  _order?: string;
+  Title?: string;
   IsActive?: boolean;
-  Brand?: string;
 }
 
-const fetchMerchants = (params: ProductQueryParams): AxiosPromise<ProductApiResponse> => {
-  return merchantApiClient.get('/admin/Merchant/Search', { params });
-};
+export interface NewsItem {
+  id: number;
+  newsGroupId: number;
+  picture: string;
+  title: string;
+  summary: string;
+  text: string;
+  isActive: boolean;
+  recordDateFa: string;
+  recordTime: string;
+}
 
-const CartOut = () => {
-  const [open, setOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null);
-  const [page, setPage] = useState(1);
-  const pageSize = 10;
+export const useNews = (params: NewsSearchParams) => {
+  const [data, setData] = useState<NewsItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
-    setPage(value);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const fetchData = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const response = await merchantApiClient.get('/admin/News/Search', { params });
+      if (response.data && response.data.valueOrDefault) {
+        setData(response.data.valueOrDefault.data || []);
+        setTotal(response.data.valueOrDefault.total || 0);
+      } else {
+        setData([]);
+        setTotal(0);
+      }
+    } catch (err) {
+      setError(true);
+      setData([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const { data: listData, isLoading: isListLoading, isError: isListError } = useQuery({
-    queryKey: ['productList', page, pageSize],
-    queryFn: () => fetchMerchants({ _page: page, _limit: pageSize }),
-  });
+  useEffect(() => {
+    fetchData();
+  }, [params._page, params._limit, params.Title, params.IsActive]);
 
-  const productList = listData?.data?.value?.data || [];
-  const total = listData?.data?.value?.total || 0;
-  const totalPages = Math.ceil(total / pageSize);
-
-  const handleOpen = (item: ProductItem) => {
-    setSelectedProduct(item);
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    setSelectedProduct(null);
-  };
-
-  return (
-    <ProductListUI
-      productList={productList}
-      totalPages={totalPages}
-      page={page}
-      isLoading={isListLoading}
-      isError={isListError}
-      open={open}
-      selectedProduct={selectedProduct}
-      onPageChange={handlePageChange}
-      onOpen={handleOpen}
-      onClose={handleClose}
-    />
-  );
-};
-
-export default CartOut;
+  return { data, total, loading, error, refetch: fetchData };
+}

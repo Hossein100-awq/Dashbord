@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 
 const setupInterceptors = (instance: any) => {
   instance.interceptors.request.use(
@@ -22,7 +22,7 @@ const setupInterceptors = (instance: any) => {
       }
       return config;
     },
-    (error: AxiosError) => {
+    (error: any) => {
       return Promise.reject(error);
     }
   );
@@ -31,7 +31,7 @@ const setupInterceptors = (instance: any) => {
     (response: AxiosResponse) => {
       return response;
     },
-    (error: AxiosError) => {
+    (error: any) => {
       if (error.response?.status === 401) {
         if (typeof window !== 'undefined') {
           if (window.location.pathname !== '/') {

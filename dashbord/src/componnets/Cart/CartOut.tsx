@@ -5,50 +5,41 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
-import PA from "./../Feature/Pagination"; 
+import { NewsItem } from "./../../componnets/Hooks/News/News";
 
-export interface ProductItem {
-  id: number;
-  name: string;
-  description: string;
-  isPercentage: boolean;
-  isOptional: boolean;
-  defaultAmount: number;
-}
-
-interface ProductListUIProps {
-  productList: ProductItem[];
-  totalPages: number;
-  page: number;
+interface NewsListUIProps {
+  newsList: NewsItem[];
   isLoading: boolean;
   isError: boolean;
   open: boolean;
-  selectedProduct: ProductItem | null;
-  onPageChange: (event: React.ChangeEvent<unknown>, value: number) => void;
-  onOpen: (item: ProductItem) => void;
+  selectedNews: NewsItem | null;
+  onOpen: (item: NewsItem) => void;
   onClose: () => void;
 }
 
-const ProductListUI: React.FC<ProductListUIProps> = ({
-  productList,
-  totalPages,
-  page,
+const NewsList: React.FC<NewsListUIProps> = ({
+  newsList,
   isLoading,
   isError,
   open,
-  selectedProduct,
-  onPageChange,
+  selectedNews,
   onOpen,
   onClose,
 }) => {
  
-  const list = Array.isArray(productList) ? productList : [];
+  const list = Array.isArray(newsList) ? newsList : [];
+
+  const cleanHtml = (html: string) => {
+    if (!html) return "";
+    let cleaned = html.replace(/href="javascript:.*?"/gi, 'href="#" onClick="return false;"');
+    cleaned = cleaned.replace(/onclick=".*?"/gi, '');
+    return cleaned;
+  };
 
   return (
-    <section className="w-full px-4">
+    <section className="w-full">
       {isLoading && (
         <div className="flex justify-center p-8">
           <CircularProgress />
@@ -57,57 +48,51 @@ const ProductListUI: React.FC<ProductListUIProps> = ({
 
       {isError && (
         <Alert severity="error" className="mb-4">
-          خطا در بارگذاری لیست محصولات
+          خطا در بارگذاری لیست اخبار
         </Alert>
       )}
 
       {!isLoading && !isError && (
         <>
           {list.length === 0 ? (
-             <div className="text-center text-gray-500 mt-8">محصولی یافت نشد</div>
+             <div className="text-center text-gray-500 mt-8">خبری یافت نشد</div>
           ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                {list.map((item: ProductItem) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {list.map((item: NewsItem) => (
                   <article
                     key={item.id}
-                    className="bg-white dark:bg-gray-800 rounded-md p-4 flex flex-col w-full shadow-sm hover:shadow-md transition-shadow duration-200 border-none"
+                    className="bg-white dark:bg-gray-800 rounded-md overflow-hidden flex flex-col w-full shadow-sm hover:shadow-md transition-shadow duration-200 border-none"
                   >
-                    <div className="font-medium text-gray-900 dark:text-gray-100 text-lg">
-                      {item.name}
-                    </div>
+                    {item.picture && (
+                      <div className="w-full h-48 bg-gray-200">
+                        <img src={item.picture} alt={item.title} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    
+                    <div className="p-4 flex flex-col flex-grow">
+                      <div className="font-medium text-gray-900 dark:text-gray-100 text-lg leading-6 mb-2">
+                        {item.title}
+                      </div>
 
-                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex-grow">
-                      {item.description || "بدون توضیحات"}
-                    </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 flex-grow line-clamp-3">
+                        {item.summary || "بدون توضیحات"}
+                      </div>
 
-                    <div className="mt-3 flex justify-between items-center text-sm pt-2">
-                      <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                        {item.isPercentage ? `${item.defaultAmount}%` : `${item.defaultAmount} ریال`}
-                      </span>
-                      {item.isOptional && (
-                        <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded">اختیاری</span>
-                      )}
-                    </div>
+                      <div className="mt-4 flex justify-between items-center text-xs text-gray-500 border-t dark:border-gray-700 pt-2">
+                        <span>{item.recordDateFa}</span>
+                        <span>{item.recordTime}</span>
+                      </div>
 
-                    <div
-                      className="text-indigo-600 dark:text-indigo-400 mt-3 cursor-pointer self-end font-medium text-sm hover:underline"
-                      onClick={() => onOpen(item)}
-                    >
-                      مشاهده جزئیات
+                      <div
+                        className="text-indigo-600 dark:text-indigo-400 mt-3 cursor-pointer self-end font-medium text-sm hover:underline"
+                        onClick={() => onOpen(item)}
+                      >
+                        مشاهده جزئیات
+                      </div>
                     </div>
                   </article>
                 ))}
               </div>
-
-              {totalPages > 1 && (
-                <PA 
-                  count={totalPages} 
-                  page={page} 
-                  onChange={onPageChange} 
-                />
-              )}
-            </>
           )}
         </>
       )}
@@ -117,43 +102,64 @@ const ProductListUI: React.FC<ProductListUIProps> = ({
         onClose={onClose}
         fullWidth
         maxWidth="sm"
-        aria-labelledby="product-dialog-title"
+        aria-labelledby="news-dialog-title"
         PaperProps={{
           className: "dark:bg-gray-800 dark:text-white",
           sx: { border: 'none' }
         }}
       >
-        <DialogTitle id="product-dialog-title" sx={{ textAlign: "right", pb: 1 }}>
-          {selectedProduct?.name || "جزئیات محصول"}
+        <DialogTitle id="news-dialog-title" sx={{ textAlign: "right", pb: 1 }}>
+          {selectedNews?.title || "جزئیات خبر"}
         </DialogTitle>
 
-        <DialogContent sx={{ direction: "rtl", minHeight: "150px" }}>
-          {selectedProduct ? (
+        <DialogContent sx={{ direction: "rtl" }}>
+          {selectedNews ? (
             <>
-              <Typography variant="body2" sx={{ mb: 2, display: 'block', lineHeight: 1.8 }}>
-                {selectedProduct.description}
-              </Typography>
-
-              <div className="grid grid-cols-2 gap-4 mt-4 bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                 <div>
-                    <Typography variant="caption" color="textSecondary">مبلغ پیش‌فرض:</Typography>
-                    <Typography variant="body1">
-                       {selectedProduct.isPercentage ? `${selectedProduct.defaultAmount}%` : `${selectedProduct.defaultAmount}`}
-                    </Typography>
-                 </div>
-                 <div>
-                    <Typography variant="caption" color="textSecondary">نوع محاسبه:</Typography>
-                    <Typography variant="body1">
-                       {selectedProduct.isPercentage ? "درصدی" : "مبلغ ثابت"}
-                    </Typography>
-                 </div>
-                 <div>
-                    <Typography variant="caption" color="textSecondary">وضعیت انتخاب:</Typography>
-                    <Typography variant="body1">
-                       {selectedProduct.isOptional ? "اختیاری" : "الزامی"}
-                    </Typography>
-                 </div>
+              {selectedNews.picture && (
+                <img src={selectedNews.picture} alt={selectedNews.title} className="w-full h-64 object-cover rounded-md mb-4" />
+              )}
+              <div className="flex gap-4 mb-4 text-sm text-gray-500 border-b border-gray-200 pb-2">
+                <span>{selectedNews.recordDateFa}</span>
+                <span>|</span>
+                <span>{selectedNews.recordTime}</span>
               </div>
+              
+              <div 
+                className="news-content text-justify leading-7"
+                dangerouslySetInnerHTML={{ 
+                  __html: cleanHtml(selectedNews.text || selectedNews.summary) 
+                }}
+              />
+
+              <style jsx global>{`
+                .news-content table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin: 15px 0;
+                  font-size: 14px;
+                  border: 1px solid #ccc;
+                }
+                .news-content td {
+                  border: 1px solid #ccc;
+                  padding: 8px;
+                  min-width: 50px;
+                  vertical-align: top;
+                }
+                .news-content p {
+                  margin-bottom: 12px;
+                  line-height: 1.8;
+                }
+                .news-content img {
+                  max-width: 100%;
+                  height: auto;
+                  border-radius: 4px;
+                  margin: 10px 0;
+                }
+                .news-content span {
+                  font-weight: inherit;
+                  color: inherit;
+                }
+              `}</style>
             </>
           ) : (
             <div className="flex justify-center items-center h-40">
@@ -172,4 +178,4 @@ const ProductListUI: React.FC<ProductListUIProps> = ({
   );
 };
 
-export default ProductListUI;
+export default NewsList;
